@@ -8,8 +8,8 @@ services.AddWindowsService(opt =>
     opt.ServiceName = "Sql Database Backup";
 });
 
-services.AddHostedService<Worker>();
 services.AddSingleton<ISqlDatabaseBackUpService, SqlDatabaseBackUpService>();
+services.AddHostedService<Worker>();
 
 #region config data load
 var configuration = builder.Configuration;

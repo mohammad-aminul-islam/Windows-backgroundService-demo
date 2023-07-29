@@ -4,7 +4,7 @@
     {
         public static void Log(this string message)
         {
-            File.AppendAllText($"{Constants.BackUpDirectory}{Path.DirectorySeparatorChar}logfile.txt", $"{DateTime.Now} : {message}{Environment.NewLine}");
+            File.AppendAllTextAsync($"{Constants.BackUpDirectory}{Path.DirectorySeparatorChar}logfile.txt", $"{DateTime.Now} : {message}{Environment.NewLine}");
         }
     }
 }
