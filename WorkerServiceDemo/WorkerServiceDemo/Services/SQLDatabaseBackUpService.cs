@@ -1,10 +1,16 @@
 ﻿using System.Data.SqlClient;
+using WorkerServiceDemo.Services.TelegramService;
 
 namespace WorkerServiceDemo.Services
 {
     public class SqlDatabaseBackUpService : ISqlDatabaseBackUpService
     {
+        private readonly ITelegramBotService _telegramBotService;
 
+        public SqlDatabaseBackUpService(ITelegramBotService telegramBotService)
+        {
+            this._telegramBotService = telegramBotService;
+        }
         public bool BackUpDataBase()
         {
             try
@@ -18,6 +24,7 @@ namespace WorkerServiceDemo.Services
                         command.ExecuteNonQuery();
                     }
                     $"Backup databases:  {string.Join(',', Constants.BackUpDatabaseNames)}".Log();
+                    _telegramBotService.Send($"Backupd databases: {string.Join(',', Constants.BackUpDatabaseNames)},Back up time:{DateTime.Now}");
                     return true;
                 }
             }
