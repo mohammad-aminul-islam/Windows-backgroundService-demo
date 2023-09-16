@@ -31,7 +31,7 @@ namespace WorkerServiceDemo
             {
                 try
                 {
-                    //_sqlDatabaseBackUpService.BackUpDataBase();
+                    _sqlDatabaseBackUpService.BackUpDataBase();
                     var ipResponse = await ipHttpClient.GetAsync($"?format=json");
                     IpModel ip = new IpModel();
                     IspInformation ispInformation = null;
