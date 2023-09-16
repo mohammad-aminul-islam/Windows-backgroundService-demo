@@ -5,11 +5,9 @@ namespace WorkerServiceDemo.Services
 {
     public class SqlDatabaseBackUpService : ISqlDatabaseBackUpService
     {
-        private readonly ITelegramBotService _telegramBotService;
 
-        public SqlDatabaseBackUpService(ITelegramBotService telegramBotService)
+        public SqlDatabaseBackUpService()
         {
-            this._telegramBotService = telegramBotService;
         }
         public bool BackUpDataBase()
         {
@@ -24,9 +22,8 @@ namespace WorkerServiceDemo.Services
                         command.ExecuteNonQuery();
                     }
                     $"Backup databases:  {string.Join(',', Constants.BackUpDatabaseNames)}".Log();
-                    _telegramBotService.Send($"Backupd databases: {string.Join(',', Constants.BackUpDatabaseNames)},Back up time:{DateTime.Now}");
-                    return true;
                 }
+                return true;
             }
             catch (Exception ex)
             {

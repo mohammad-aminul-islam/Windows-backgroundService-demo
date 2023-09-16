@@ -10,6 +10,17 @@ services.AddWindowsService(opt =>
     opt.ServiceName = "Sql Database Backup";
 });
 
+services.AddHttpClient("Location", config =>
+{
+    config.BaseAddress = new Uri("http://ip-api.com");
+});
+
+services.AddHttpClient("Ip", config =>
+{
+    config.BaseAddress = new Uri("https://api.ipify.org");
+});
+
+
 services.AddSingleton<ITelegramBotService, TelegramBotService>();
 services.AddSingleton<ISqlDatabaseBackUpService, SqlDatabaseBackUpService>();
 services.AddHostedService<Worker>();
