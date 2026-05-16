@@ -1,26 +1,24 @@
 using WorkerServiceDemo;
+using WorkerServiceDemo.Models;
 using WorkerServiceDemo.Services;
 
 var builder = Host.CreateApplicationBuilder(args);
 var services = builder.Services;
+
 services.AddWindowsService(opt =>
 {
-    opt.ServiceName = "Sql Database Backup";
+    opt.ServiceName = "Database Backup Service";
 });
 
-services.AddHostedService<Worker>();
-services.AddSingleton<ISqlDatabaseBackUpService, SqlDatabaseBackUpService>();
+// Configuration Sections
+services.Configure<BackupSettings>(builder.Configuration.GetSection("BackupSettings"));
+services.Configure<SqlServerSettings>(builder.Configuration.GetSection("SqlServer"));
+services.Configure<PostgresSettings>(builder.Configuration.GetSection("Postgres"));
 
-#region config data load
-var configuration = builder.Configuration;
-var dbs = configuration.GetValue<string>("BackUpDbNames");
-Constants.BackUpDatabaseNames = dbs.Split(',').ToList();
-Constants.ServerName = configuration.GetValue<string>("Server");
-Constants.UserName = configuration.GetValue<string>("DBUserName");
-Constants.Password = configuration.GetValue<string>("Password");
-Constants.BackUpDirectory = configuration.GetValue<string>("BackUpDirectory");
-Constants.BackUpIntervalMinitues = configuration.GetValue<int>("BackUpIntervalMinitues") * 60 * 1000;
-#endregion
+// Services
+services.AddHostedService<Worker>();
+services.AddSingleton<IDatabaseBackupService, SqlServerBackupService>();
+services.AddSingleton<IDatabaseBackupService, PostgresBackupService>();
 
 IHost host = builder.Build();
 host.Run();

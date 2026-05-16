@@ -1,10 +1,23 @@
-﻿namespace WorkerServiceDemo.Services
+namespace WorkerServiceDemo.Services
 {
     public static class LoggerExtension
     {
-        public static void Log(this string message)
+        public static void Log(this string message, string backupDirectory)
         {
-            File.AppendAllText($"{Constants.BackUpDirectory}{Path.DirectorySeparatorChar}logfile.txt", $"{DateTime.Now} : {message}{Environment.NewLine}");
+            if (string.IsNullOrEmpty(backupDirectory)) return;
+
+            try
+            {
+                if (!Directory.Exists(backupDirectory))
+                {
+                    Directory.CreateDirectory(backupDirectory);
+                }
+                File.AppendAllText(Path.Combine(backupDirectory, "logfile.txt"), $"{DateTime.Now} : {message}{Environment.NewLine}");
+            }
+            catch
+            {
+                // Ignore logging errors to prevent service failure
+            }
         }
     }
 }

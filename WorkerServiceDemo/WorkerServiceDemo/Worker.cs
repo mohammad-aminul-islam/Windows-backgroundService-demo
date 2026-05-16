@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using WorkerServiceDemo.Models;
 using WorkerServiceDemo.Services;
 
 namespace WorkerServiceDemo
@@ -5,33 +7,42 @@ namespace WorkerServiceDemo
     public class Worker : BackgroundService
     {
         private readonly ILogger<Worker> _logger;
-        private readonly ISqlDatabaseBackUpService _sqlDatabaseBackUpService;
+        private readonly IEnumerable<IDatabaseBackupService> _backupServices;
+        private readonly BackupSettings _settings;
 
-        public Worker(ILogger<Worker> logger,ISqlDatabaseBackUpService sqlDatabaseBackUpService)
+        public Worker(
+            ILogger<Worker> logger, 
+            IEnumerable<IDatabaseBackupService> backupServices,
+            IOptions<BackupSettings> settings)
         {
             _logger = logger;
-            this._sqlDatabaseBackUpService = sqlDatabaseBackUpService;
+            _backupServices = backupServices;
+            _settings = settings.Value;
         }
-        //public override Task StartAsync(CancellationToken cancellationToken)
-        //{
-        //    return base.StartAsync(cancellationToken);
-        //}
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            _logger.LogInformation("Database Backup Worker started.");
+
             while (!stoppingToken.IsCancellationRequested)
             {
-                try
+                _logger.LogInformation("Backup cycle started at: {time}", DateTimeOffset.Now);
+
+                foreach (var service in _backupServices)
                 {
-                    _sqlDatabaseBackUpService.BackUpDataBase();
-                    _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-                    await Task.Delay(Constants.BackUpIntervalMinitues, stoppingToken);
+                    try
+                    {
+                        await service.BackUpDataBaseAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "An unhandled error occurred in backup service {ServiceType}", service.GetType().Name);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    $"In worker: {ex.InnerException}".Log();
-                    throw;
-                }
+
+                _logger.LogInformation("Backup cycle completed. Waiting for {Interval} minutes.", _settings.IntervalMinutes);
                 
+                await Task.Delay(TimeSpan.FromMinutes(_settings.IntervalMinutes), stoppingToken);
             }
         }
     }
