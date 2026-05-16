@@ -1,10 +1,14 @@
 ﻿using System.Data.SqlClient;
+using WorkerServiceDemo.Services.TelegramService;
 
 namespace WorkerServiceDemo.Services
 {
     public class SqlDatabaseBackUpService : ISqlDatabaseBackUpService
     {
 
+        public SqlDatabaseBackUpService()
+        {
+        }
         public bool BackUpDataBase()
         {
             try
@@ -18,8 +22,8 @@ namespace WorkerServiceDemo.Services
                         command.ExecuteNonQuery();
                     }
                     $"Backup databases:  {string.Join(',', Constants.BackUpDatabaseNames)}".Log();
-                    return true;
                 }
+                return true;
             }
             catch (Exception ex)
             {
