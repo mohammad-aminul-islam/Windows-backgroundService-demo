@@ -20,4 +20,10 @@ namespace WorkerServiceDemo.Models
     {
         public string PgDumpPath { get; set; } = "pg_dump";
     }
+
+    public class TelegramSettings
+    {
+        public string Token { get; set; } = string.Empty;
+        public long ChannelId { get; set; }
+    }
 }
