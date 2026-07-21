@@ -2,7 +2,8 @@ namespace WorkerServiceDemo.Models
 {
     public class BackupSettings
     {
-        public int IntervalMinutes { get; set; }
+        // Standard 5-field cron expression (e.g. "0 2 * * *" for daily at 2 AM).
+        public string CronExpression { get; set; } = string.Empty;
     }
 
     public abstract class DatabaseSettings
@@ -19,6 +20,10 @@ namespace WorkerServiceDemo.Models
     public class PostgresSettings : DatabaseSettings
     {
         public string PgDumpPath { get; set; } = "pg_dump";
+
+        // When set, pg_dump runs inside this Docker container via `docker exec`
+        // instead of using a locally installed pg_dump.
+        public string ContainerName { get; set; } = string.Empty;
     }
 
     public class TelegramSettings

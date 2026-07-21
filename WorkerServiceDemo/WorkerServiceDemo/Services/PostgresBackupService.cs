@@ -19,7 +19,9 @@ namespace WorkerServiceDemo.Services
         {
             try
             {
-                if (string.IsNullOrEmpty(_settings.Server))
+                var useDocker = !string.IsNullOrEmpty(_settings.ContainerName);
+
+                if (!useDocker && string.IsNullOrEmpty(_settings.Server))
                 {
                     _logger.LogWarning("PostgreSQL backup skipped: Server not configured.");
                     return false;
@@ -33,26 +35,52 @@ namespace WorkerServiceDemo.Services
                 foreach (var item in _settings.DatabaseNames)
                 {
                     var fileName = Path.Combine(_settings.BackupDirectory, $"{DateTime.Today:dd_MMM_yyyy}_{item}.sql");
-                    
-                    var startInfo = new ProcessStartInfo
-                    {
-                        FileName = _settings.PgDumpPath,
-                        Arguments = $"-h {_settings.Server} -U {_settings.UserName} -f \"{fileName}\" {item}",
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    };
 
-                    // Set password via environment variable
-                    startInfo.EnvironmentVariables["PGPASSWORD"] = _settings.Password;
+                    ProcessStartInfo startInfo;
+                    if (useDocker)
+                    {
+                        // Runs pg_dump inside the container itself and streams its stdout to the host file,
+                        // so no local pg_dump / version matching is needed.
+                        startInfo = new ProcessStartInfo
+                        {
+                            FileName = "docker",
+                            Arguments = $"exec -e PGPASSWORD=\"{_settings.Password}\" {_settings.ContainerName} {_settings.PgDumpPath} -U {_settings.UserName} {item}",
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        };
+                    }
+                    else
+                    {
+                        startInfo = new ProcessStartInfo
+                        {
+                            FileName = _settings.PgDumpPath,
+                            Arguments = $"-h {_settings.Server} -U {_settings.UserName} -f \"{fileName}\" {item}",
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        };
+
+                        // Set password via environment variable
+                        startInfo.EnvironmentVariables["PGPASSWORD"] = _settings.Password;
+                    }
 
                     using var process = new Process { StartInfo = startInfo };
-                    
+
                     _logger.LogInformation("Starting PostgreSQL backup for {Database}...", item);
                     process.Start();
-                    
-                    var error = await process.StandardError.ReadToEndAsync();
+
+                    var errorTask = process.StandardError.ReadToEndAsync();
+
+                    if (useDocker)
+                    {
+                        await using var fileStream = File.Create(fileName);
+                        await process.StandardOutput.BaseStream.CopyToAsync(fileStream);
+                    }
+
+                    var error = await errorTask;
                     await process.WaitForExitAsync();
 
                     if (process.ExitCode == 0)

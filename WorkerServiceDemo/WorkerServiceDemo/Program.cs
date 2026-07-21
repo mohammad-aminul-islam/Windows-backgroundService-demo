@@ -1,4 +1,7 @@
+using Hangfire;
+using Hangfire.PostgreSql;
 using WorkerServiceDemo;
+using WorkerServiceDemo.Jobs;
 using WorkerServiceDemo.Models;
 using WorkerServiceDemo.Services;
 using WorkerServiceDemo.Services.TelegramService;
@@ -28,11 +31,24 @@ services.AddHttpClient("Ip", config =>
     config.BaseAddress = new Uri("https://api.ipify.org");
 });
 
+// Hangfire
+var hangfireConnectionString = builder.Configuration.GetConnectionString("Hangfire")
+    ?? throw new InvalidOperationException("Missing ConnectionStrings:Hangfire configuration.");
+
+services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(opt => opt.UseNpgsqlConnection(hangfireConnectionString)));
+
+services.AddHangfireServer();
+
 // Services
-services.AddHostedService<Worker>();
 services.AddSingleton<IDatabaseBackupService, SqlServerBackupService>();
 services.AddSingleton<IDatabaseBackupService, PostgresBackupService>();
 services.AddSingleton<ITelegramBotService, TelegramBotService>();
+services.AddScoped<DatabaseBackupJob>();
+services.AddHostedService<DatabaseBackupWorker>();
 
 IHost host = builder.Build();
 host.Run();
