@@ -1,5 +1,4 @@
 using Hangfire;
-using Hangfire.PostgreSql;
 using WorkerServiceDemo;
 using WorkerServiceDemo.Jobs;
 using WorkerServiceDemo.Models;
@@ -32,14 +31,11 @@ services.AddHttpClient("Ip", config =>
 });
 
 // Hangfire
-var hangfireConnectionString = builder.Configuration.GetConnectionString("Hangfire")
-    ?? throw new InvalidOperationException("Missing ConnectionStrings:Hangfire configuration.");
-
 services.AddHangfire(config => config
     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
     .UseSimpleAssemblyNameTypeSerializer()
     .UseRecommendedSerializerSettings()
-    .UsePostgreSqlStorage(opt => opt.UseNpgsqlConnection(hangfireConnectionString)));
+    .UseInMemoryStorage());
 
 services.AddHangfireServer();
 
