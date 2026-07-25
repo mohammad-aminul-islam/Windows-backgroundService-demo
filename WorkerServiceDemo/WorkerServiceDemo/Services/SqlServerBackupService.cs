@@ -42,7 +42,6 @@ namespace WorkerServiceDemo.Services
                     await command.ExecuteNonQueryAsync();
                     
                     _logger.LogInformation("SQL Server backup completed for {Database} to {File}", item, fileName);
-                    $"{DateTime.Now} : Backup completed for {item}".Log(_settings.BackupDirectory);
                 }
 
                 return true;
@@ -50,7 +49,6 @@ namespace WorkerServiceDemo.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during SQL Server backup.");
-                ex.Message.Log(_settings.BackupDirectory);
                 return false;
             }
         }

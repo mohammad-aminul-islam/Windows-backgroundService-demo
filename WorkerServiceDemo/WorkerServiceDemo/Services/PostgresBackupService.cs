@@ -86,12 +86,10 @@ namespace WorkerServiceDemo.Services
                     if (process.ExitCode == 0)
                     {
                         _logger.LogInformation("PostgreSQL backup completed for {Database} to {File}", item, fileName);
-                        $"{DateTime.Now} : PostgreSQL Backup completed for {item}".Log(_settings.BackupDirectory);
                     }
                     else
                     {
                         _logger.LogError("PostgreSQL backup failed for {Database}: {Error}", item, error);
-                        $"PostgreSQL Backup failed for {item}: {error}".Log(_settings.BackupDirectory);
                     }
                 }
 
@@ -100,7 +98,6 @@ namespace WorkerServiceDemo.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during PostgreSQL backup.");
-                ex.Message.Log(_settings.BackupDirectory);
                 return false;
             }
         }

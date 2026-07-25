@@ -10,6 +10,7 @@ Copy `WorkerServiceDemo/appsettings.example.json` to `WorkerServiceDemo/appsetti
 - `SqlServer` — server, credentials, database names, and backup directory for SQL Server backups.
 - `Postgres` — server, credentials, database names, and backup directory for PostgreSQL backups (see below).
 - `Telegram` — bot token and channel ID for completion notifications.
+- `Serilog.FilePath` — where the log file is written (see [Logging](#logging) below; everything else about logging is fixed in code).
 
 ## Running PostgreSQL backups (pg_dump)
 
@@ -70,6 +71,21 @@ Use this when PostgreSQL itself runs in Docker — no local `pg_dump` install ne
 ### Skipping PostgreSQL backups
 
 Leave `Postgres:Server` and `Postgres:ContainerName` both empty to skip PostgreSQL backups entirely (only SQL Server will run).
+
+## Logging
+
+Logging is handled by Serilog, configured directly in [Program.cs](WorkerServiceDemo/Program.cs). The only setting read from `appsettings.json` is `Serilog:FilePath` — everything else (levels, sinks, output format) is fixed in code:
+
+- **Console** — visible when running with `dotnet run` or interactively.
+- **File** — writes to the path in `Serilog:FilePath` (defaults to `Logs/log-.txt`, relative to the working directory), rolling daily and keeping the last 14 files.
+
+Both sinks use the same output template:
+
+```
+{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}
+```
+
+`{SourceContext}` is the fully-qualified name of the class that logged the message (e.g. `WorkerServiceDemo.Jobs.DatabaseBackupJob`), which comes for free from each service's `ILogger<T>` — this makes it possible to trace a log line back to its source at a glance without extra enrichment code. `Microsoft`/`System` categories are overridden to `Warning` to cut framework noise; adjust the `MinimumLevel.Override` calls in `Program.cs` to change that.
 
 ## Running the service
 

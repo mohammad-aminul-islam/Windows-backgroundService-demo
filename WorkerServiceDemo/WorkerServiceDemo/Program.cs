@@ -1,4 +1,6 @@
 using Hangfire;
+using Serilog;
+using Serilog.Events;
 using WorkerServiceDemo;
 using WorkerServiceDemo.Jobs;
 using WorkerServiceDemo.Models;
@@ -7,6 +9,24 @@ using WorkerServiceDemo.Services.TelegramService;
 
 var builder = Host.CreateApplicationBuilder(args);
 var services = builder.Services;
+
+// Only the log file path comes from appsettings.json — everything else about
+// the logging setup below is fixed.
+var logFilePath = builder.Configuration["Serilog:FilePath"] ?? "Logs/log-.txt";
+const string outputTemplate = "{Timestamp:dd-MMM-yyyy hh:mm tt} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}";
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
+    .MinimumLevel.Override("System", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(outputTemplate: outputTemplate)
+    .WriteTo.File(logFilePath, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 14, outputTemplate: outputTemplate)
+    .CreateLogger();
+
+builder.Logging.ClearProviders();
+services.AddSerilog();
 
 services.AddWindowsService(opt =>
 {
@@ -47,4 +67,12 @@ services.AddScoped<DatabaseBackupJob>();
 services.AddHostedService<DatabaseBackupWorker>();
 
 IHost host = builder.Build();
-host.Run();
+
+try
+{
+    host.Run();
+}
+finally
+{
+    Log.CloseAndFlush();
+}
