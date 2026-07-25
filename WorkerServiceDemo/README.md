@@ -77,12 +77,14 @@ Leave `Postgres:Server` and `Postgres:ContainerName` both empty to skip PostgreS
 Logging is handled by Serilog, configured directly in [Program.cs](WorkerServiceDemo/Program.cs). The only setting read from `appsettings.json` is `Serilog:FilePath` — everything else (levels, sinks, output format) is fixed in code:
 
 - **Console** — visible when running with `dotnet run` or interactively.
-- **File** — writes to the path in `Serilog:FilePath` (defaults to `Logs/log-.txt`, relative to the working directory), rolling daily and keeping the last 14 files.
+- **File** — writes to the path in `Serilog:FilePath` (defaults to `Logs/log-.txt`), rolling daily and keeping the last 14 files.
+
+If `Serilog:FilePath` is relative, it's resolved against the app's own install folder (`AppContext.BaseDirectory`), not the process's current directory. This matters when running as a Windows Service: the Service Control Manager launches the process with its working directory set to `C:\Windows\System32`, so without this, a relative path would silently write logs there instead of next to the app.
 
 Both sinks use the same output template:
 
 ```
-{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}
+{Timestamp:dd-MMM-yyyy hh:mm tt} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}
 ```
 
 `{SourceContext}` is the fully-qualified name of the class that logged the message (e.g. `WorkerServiceDemo.Jobs.DatabaseBackupJob`), which comes for free from each service's `ILogger<T>` — this makes it possible to trace a log line back to its source at a glance without extra enrichment code. `Microsoft`/`System` categories are overridden to `Warning` to cut framework noise; adjust the `MinimumLevel.Override` calls in `Program.cs` to change that.
