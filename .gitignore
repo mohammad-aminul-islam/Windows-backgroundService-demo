@@ -53,3 +53,11 @@ dkms.conf
 /WorkerServiceDemo/WorkerServiceDemo/obj
 /WorkerServiceDemo/WorkerServiceDemo/bin
 /WorkerServiceDemo/.vs
+
+# Configuration files
+**/appsettings.json
+**/appsettings.*.json
+!**/appsettings.example.json
+
+# Serilog file sink output
+**/Logs/
